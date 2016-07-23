@@ -15,7 +15,7 @@ import android.os.Bundle;
 import java.util.List;
 import java.util.UUID;
 
-public class CrimePagerActivity extends FragmentActivity {
+public class CrimePagerActivity extends AppCompatActivity {
 
     private static final String EXTA_CRIME = "com.criminal.android.criminalintent.crimepageactivity.crime";
 

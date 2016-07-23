@@ -25,17 +25,21 @@ import java.util.UUID;
 public class CrimeFragment extends Fragment {
 
     private static final int REQUEST_DATE = 0;
+    private static final int REQUEST_TIME = 10;
 
     private static final String ARG_CRIME_ID = "crime_id";
     private static final String EXTRA_CRIME_CHANGE = "com.criminal.android.criminalintent.crimefragment.change_id";
     private static final String DIALOG_DATE = "DialogDate";
+    private static final String DIALOG_TIME = "DialogTime";
 
     private Crime mCrime;
 
     //Components
     private EditText mTitleField;
     private Button mDateButton;
+    private Button mTimeButton;
     private CheckBox mSolvedCheckBox;
+
 
     @Override
     public void onCreate(Bundle savedInstanceBundle) {
@@ -81,6 +85,19 @@ public class CrimeFragment extends Fragment {
             }
         });
 
+        mTimeButton = (Button) v.findViewById(R.id.crime_time);
+        updateDate();
+        mTimeButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                FragmentManager fm = getFragmentManager();
+                TimePickerFragment timeDialog = TimePickerFragment.newInstance(mCrime.getDate());
+                timeDialog.setTargetFragment(CrimeFragment.this, REQUEST_TIME);
+                timeDialog.show(fm, DIALOG_TIME);
+                returnResult();
+            }
+        });
+
         mSolvedCheckBox = (CheckBox) v.findViewById(R.id.crime_solved);
         mSolvedCheckBox.setChecked(mCrime.isSolved());
         mSolvedCheckBox.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
@@ -110,6 +127,11 @@ public class CrimeFragment extends Fragment {
             mCrime.setDate(date);
             updateDate();
         }
+        if(requestCode == REQUEST_TIME){
+            Date date = (Date) dateIntent.getSerializableExtra(TimePickerFragment.ARG_TIME);
+            mCrime.setDate(date);
+            updateDate();
+        }
     }
 
     /**
@@ -129,7 +151,10 @@ public class CrimeFragment extends Fragment {
     }
 
     private void updateDate(){
-        mDateButton.setText(DateFormat.format("hh:mm a E, MMMM d, yyyy", mCrime.getDate()));
+        if(mDateButton != null)
+            mDateButton.setText(DateFormat.format("E, MMMM d, yyyy", mCrime.getDate()));
+        if(mTimeButton != null)
+            mTimeButton.setText(DateFormat.format("hh:mm a", mCrime.getDate()));
     }
 
     public static UUID getChangedCrimeForIntent(Intent data){

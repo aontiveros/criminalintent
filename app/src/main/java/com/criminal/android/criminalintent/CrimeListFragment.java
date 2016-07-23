@@ -4,9 +4,13 @@ import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
+import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.CheckBox;
@@ -24,7 +28,11 @@ public class CrimeListFragment extends Fragment{
     private RecyclerView mCrimeRecyclerView;
     private CrimeAdapter mCrimeAdapter;
 
+    private boolean mSubtitleVisibility;
+
     private static final int REQUEST_CRIME = 1;
+    private static final String SAVED_SUBTITLE = "subtitle";
+
 
 
     @Override
@@ -46,6 +54,19 @@ public class CrimeListFragment extends Fragment{
     }
 
     /**
+     * Lets the system know that this fragment has menu options
+     * @param savedInstanceState The state for the fragment
+     */
+    @Override
+    public void onCreate(Bundle savedInstanceState){
+        super.onCreate(savedInstanceState);
+        if(savedInstanceState != null){
+            mSubtitleVisibility = savedInstanceState.getBoolean(SAVED_SUBTITLE, false);
+        }
+        setHasOptionsMenu(true);
+    }
+
+    /**
      * Create the adapter, give it the list of crimes, and assign it to the recycle view to work with.
      */
     private void updateUI(){
@@ -56,6 +77,24 @@ public class CrimeListFragment extends Fragment{
             mCrimeAdapter = new CrimeAdapter(crimes);
             mCrimeRecyclerView.setAdapter(mCrimeAdapter);
         }
+        else{
+            mCrimeAdapter.notifyDataSetChanged();
+        }
+
+        updateSubtitle();
+    }
+
+    @Override
+    public void onCreateOptionsMenu(Menu menu, MenuInflater menuInflater){
+        //call super just for convention. It doesn't actually do anything!
+        super.onCreateOptionsMenu(menu, menuInflater);
+        menuInflater.inflate(R.menu.fragment_crime_list, menu);
+
+        MenuItem subtitleItem = menu.findItem(R.id.menu_item_show_subtitle);
+        if(mSubtitleVisibility)
+            subtitleItem.setTitle(R.string.hide_subtitle);
+        else
+            subtitleItem.setTitle(R.string.show_subtitle);
     }
 
     @Override
@@ -65,6 +104,50 @@ public class CrimeListFragment extends Fragment{
             if(changedCrime != null)
                 mCrimeAdapter.notifyItemChanged(CrimeLab.get(getActivity()).getCrimeIndex(changedCrime));
         }
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item){
+        switch (item.getItemId()){
+            case R.id.menu_item_new_crime:
+                Crime crime = new Crime();
+                CrimeLab.get(getActivity()).addCrime(crime);
+                Intent intent = new CrimePagerActivity().newIntent(getActivity(), crime.getId());
+                startActivity(intent);
+                return true;
+            case R.id.menu_item_show_subtitle:
+                mSubtitleVisibility = !mSubtitleVisibility;
+                getActivity().invalidateOptionsMenu();
+                updateSubtitle();
+                return true;
+            default:
+                return super.onOptionsItemSelected(item);
+        }
+    }
+
+    /**
+     * Updates subtitle to the correct corresponding # of elements
+     */
+    private void updateSubtitle(){
+        CrimeLab crimeLab = CrimeLab.get(getActivity());
+        int crimeCount = crimeLab.getCrimes().size();
+        String subtitle = getString(R.string.subtitle_format, crimeCount);
+
+        if(!mSubtitleVisibility){
+            subtitle = null;
+        }
+
+        AppCompatActivity activity = (AppCompatActivity) getActivity();
+        activity.getSupportActionBar().setSubtitle(subtitle);  
+    }
+
+    /**
+     * Save the state of the subtitle visibility upon update
+     * @param bundle
+     */
+    public void onSaveInstanceState(Bundle bundle){
+        super.onSaveInstanceState(bundle);
+        bundle.putBoolean(SAVED_SUBTITLE, mSubtitleVisibility);
     }
 
     /**
@@ -108,6 +191,8 @@ public class CrimeListFragment extends Fragment{
             startActivityForResult(CrimePagerActivity.newIntent(getActivity(), mCrime.getId()), CrimeListFragment.REQUEST_CRIME);
         }
     }
+
+
 
     private class CrimeAdapter extends RecyclerView.Adapter<CrimeHolder> {
         private List<Crime> mCrimes;
