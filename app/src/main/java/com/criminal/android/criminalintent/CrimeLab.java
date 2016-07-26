@@ -67,6 +67,16 @@ public class CrimeLab {
         throw new NoSuchElementException();
     }
 
+    public void removeCrimeByUUID(UUID crime){
+        for(int i = 0; i < mCrimes.size(); i++){
+            if(mCrimes.get(i).getId().equals(crime)){
+                mCrimes.remove(i);
+                return;
+            }
+        }
+        throw new NoSuchElementException();
+    }
+
     public void addCrime(Crime newCrime){
         mCrimes.add(newCrime);
     }

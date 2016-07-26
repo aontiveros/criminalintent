@@ -1,10 +1,12 @@
 package com.criminal.android.criminalintent;
 
 import android.app.Activity;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
+import android.support.v7.app.AlertDialog;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.text.format.DateFormat;
@@ -15,6 +17,7 @@ import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.EditText;
+import android.widget.Toast;
 
 import java.util.Date;
 import java.util.UUID;
@@ -32,6 +35,7 @@ public class CrimeFragment extends Fragment {
     private static final String DIALOG_DATE = "DialogDate";
     private static final String DIALOG_TIME = "DialogTime";
 
+
     private Crime mCrime;
 
     //Components
@@ -39,6 +43,7 @@ public class CrimeFragment extends Fragment {
     private Button mDateButton;
     private Button mTimeButton;
     private CheckBox mSolvedCheckBox;
+    private Button mDeleteCrimeButton;
 
 
     @Override
@@ -105,6 +110,28 @@ public class CrimeFragment extends Fragment {
             public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
                 mCrime.setSolved(true);
                 returnResult();
+            }
+        });
+
+        mDeleteCrimeButton = (Button) v.findViewById(R.id.delete_crime_button);
+        mDeleteCrimeButton.setOnClickListener(new View.OnClickListener(){
+            @Override
+            public void onClick(View v){
+                new AlertDialog.Builder(getActivity())
+                        .setTitle(R.string.confirm_delete_crime)
+                        .setMessage(R.string.delete_crime_question)
+                        .setIcon(android.R.drawable.stat_sys_warning)
+                        .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialogInterface, int i) {
+                                CrimeLab.get(getActivity()).removeCrimeByUUID(mCrime.getId());
+                                returnResult();
+                                getActivity().finishActivity(Activity.RESULT_OK);
+                                getActivity().finish();
+                            }
+                        })
+                        .setNegativeButton(android.R.string.no, null)
+                        .show();
             }
         });
 

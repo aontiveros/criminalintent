@@ -17,6 +17,8 @@ import android.widget.CheckBox;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import org.w3c.dom.Text;
+
 import java.util.List;
 import java.util.UUID;
 
@@ -27,6 +29,7 @@ public class CrimeListFragment extends Fragment{
 
     private RecyclerView mCrimeRecyclerView;
     private CrimeAdapter mCrimeAdapter;
+    private TextView mNoCrimeTextView;
 
     private boolean mSubtitleVisibility;
 
@@ -41,6 +44,17 @@ public class CrimeListFragment extends Fragment{
         mCrimeRecyclerView = (RecyclerView) v.findViewById(R.id.crime_recycle_viewer);
 
         mCrimeRecyclerView.setLayoutManager(new LinearLayoutManager(getActivity()));
+
+        mNoCrimeTextView = (TextView) v.findViewById(R.id.no_items_view);
+        mNoCrimeTextView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Crime crime = new Crime();
+                CrimeLab.get(getActivity()).addCrime(crime);
+                Intent intent = new CrimePagerActivity().newIntent(getActivity(), crime.getId());
+                startActivity(intent);
+            }
+        });
 
         updateUI();
 
@@ -73,6 +87,14 @@ public class CrimeListFragment extends Fragment{
         CrimeLab crimeLab = CrimeLab.get(getActivity());
         List<Crime> crimes = crimeLab.getCrimes();
 
+        if(crimes.size() > 0){
+            mNoCrimeTextView.setVisibility(View.GONE);
+            mCrimeRecyclerView.setVisibility(View.VISIBLE);
+        }
+        else{
+            mNoCrimeTextView.setVisibility(View.VISIBLE);
+            mCrimeRecyclerView.setVisibility(View.GONE);
+        }
         if(mCrimeAdapter == null) {
             mCrimeAdapter = new CrimeAdapter(crimes);
             mCrimeRecyclerView.setAdapter(mCrimeAdapter);
@@ -102,7 +124,7 @@ public class CrimeListFragment extends Fragment{
         if(requestCode == CrimeListFragment.REQUEST_CRIME && data != null){
             UUID changedCrime = CrimeFragment.getChangedCrimeForIntent(data);
             if(changedCrime != null)
-                mCrimeAdapter.notifyItemChanged(CrimeLab.get(getActivity()).getCrimeIndex(changedCrime));
+                mCrimeAdapter.notifyDataSetChanged();
         }
     }
 
@@ -131,7 +153,7 @@ public class CrimeListFragment extends Fragment{
     private void updateSubtitle(){
         CrimeLab crimeLab = CrimeLab.get(getActivity());
         int crimeCount = crimeLab.getCrimes().size();
-        String subtitle = getString(R.string.subtitle_format, crimeCount);
+        String subtitle = getResources().getQuantityString(R.plurals.subtitle_plural, crimeCount, crimeCount);
 
         if(!mSubtitleVisibility){
             subtitle = null;
