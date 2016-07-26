@@ -3,21 +3,28 @@ package com.criminal.android.criminalintent;
 import android.app.Activity;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.database.Cursor;
+import android.net.Uri;
 import android.os.Bundle;
+import android.provider.ContactsContract;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
+import android.support.v4.app.ShareCompat;
 import android.support.v7.app.AlertDialog;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.text.format.DateFormat;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.EditText;
-import android.widget.Toast;
 
 import java.util.Date;
 import java.util.UUID;
@@ -29,6 +36,7 @@ public class CrimeFragment extends Fragment {
 
     private static final int REQUEST_DATE = 0;
     private static final int REQUEST_TIME = 10;
+    private static final int REQUEST_CONTACT = 20;
 
     private static final String ARG_CRIME_ID = "crime_id";
     private static final String EXTRA_CRIME_CHANGE = "com.criminal.android.criminalintent.crimefragment.change_id";
@@ -43,7 +51,8 @@ public class CrimeFragment extends Fragment {
     private Button mDateButton;
     private Button mTimeButton;
     private CheckBox mSolvedCheckBox;
-    private Button mDeleteCrimeButton;
+    private Button mSuspectButton;
+    private Button mReportButton;
 
 
     @Override
@@ -51,6 +60,47 @@ public class CrimeFragment extends Fragment {
         super.onCreate(savedInstanceBundle);
         UUID crimeId = (UUID) getArguments().getSerializable(ARG_CRIME_ID);
         mCrime = CrimeLab.get(getActivity()).getCrimeById(crimeId);
+        setHasOptionsMenu(true); //notify that there are menu items to be created
+    }
+
+    /**
+     * Create an option menu
+     * @param menu The menu to create
+     * @param menuInflater The menu to inflate
+     */
+    @Override
+    public void onCreateOptionsMenu(Menu menu, MenuInflater menuInflater){
+        //call super just for convention. It doesn't actually do anything!
+        super.onCreateOptionsMenu(menu, menuInflater);
+        menuInflater.inflate(R.menu.fragment_crime, menu); //notify creation of menu items
+    }
+
+    /**
+     * Create the options menu to delete a selected item
+     * @param item The item that was selected
+     * @return the statuc
+     */
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item){
+        switch (item.getItemId()) {
+            case R.id.menu_crime_delete_item:
+                new AlertDialog.Builder(getActivity())
+                        .setTitle(R.string.confirm_delete_crime)
+                        .setMessage(R.string.delete_crime_question)
+                        .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialogInterface, int i) {
+                                CrimeLab.get(getActivity()).removeCrimeByUUID(mCrime.getId());
+                                getActivity().finishActivity(Activity.RESULT_OK);
+                                getActivity().finish();
+                            }
+                        })
+                        .setNegativeButton(android.R.string.no, null)
+                        .show();
+                return true;
+            default:
+                return super.onOptionsItemSelected(item);
+        }
     }
 
     @Override
@@ -108,32 +158,42 @@ public class CrimeFragment extends Fragment {
         mSolvedCheckBox.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
-                mCrime.setSolved(true);
+                mCrime.setSolved(!mCrime.isSolved());
                 returnResult();
             }
         });
 
-        mDeleteCrimeButton = (Button) v.findViewById(R.id.delete_crime_button);
-        mDeleteCrimeButton.setOnClickListener(new View.OnClickListener(){
+        mReportButton = (Button) v.findViewById(R.id.send_crime_button);
+        mReportButton.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onClick(View v){
-                new AlertDialog.Builder(getActivity())
-                        .setTitle(R.string.confirm_delete_crime)
-                        .setMessage(R.string.delete_crime_question)
-                        .setIcon(android.R.drawable.stat_sys_warning)
-                        .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
-                            @Override
-                            public void onClick(DialogInterface dialogInterface, int i) {
-                                CrimeLab.get(getActivity()).removeCrimeByUUID(mCrime.getId());
-                                returnResult();
-                                getActivity().finishActivity(Activity.RESULT_OK);
-                                getActivity().finish();
-                            }
-                        })
-                        .setNegativeButton(android.R.string.no, null)
-                        .show();
+            public void onClick(View view) {
+                Intent i = ShareCompat.IntentBuilder.from(getActivity())
+                        .setType("text/plain")
+                        .setSubject(getString(R.string.send_report))
+                        .setText(getCrimeReport())
+                        .getIntent();
+                startActivity(i);
             }
         });
+
+        final Intent pickContactIntent = new Intent(Intent.ACTION_PICK,
+                ContactsContract.Contacts.CONTENT_URI);
+        mSuspectButton = (Button) v.findViewById(R.id.choose_suspect_button);
+        mSuspectButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                startActivityForResult(pickContactIntent, REQUEST_CONTACT);
+
+            }
+        });
+        if(mCrime.getSuspect() != null)
+            mSuspectButton.setText(mCrime.getSuspect());
+
+        PackageManager packageManager = getActivity().getPackageManager();
+        if(packageManager.resolveActivity(pickContactIntent, packageManager.MATCH_DEFAULT_ONLY) == null){
+            mSuspectButton.setEnabled(false);
+        }
+
 
         return v;
     }
@@ -154,10 +214,31 @@ public class CrimeFragment extends Fragment {
             mCrime.setDate(date);
             updateDate();
         }
-        if(requestCode == REQUEST_TIME){
+        else if(requestCode == REQUEST_TIME){
             Date date = (Date) dateIntent.getSerializableExtra(TimePickerFragment.ARG_TIME);
             mCrime.setDate(date);
             updateDate();
+        }
+        else if(requestCode == REQUEST_CONTACT){
+            Uri contactUri = dateIntent.getData();
+
+            String[] queryField = new String[]{
+                    ContactsContract.Contacts.DISPLAY_NAME
+            };
+
+            Cursor c = getActivity().getContentResolver().query(contactUri, queryField, null, null, null);
+            try{
+                if(c.getCount() == 0)
+                    return;
+
+                c.moveToFirst();
+                String suspect = c.getString(0);
+                mCrime.setSuspect(suspect);
+                mSuspectButton.setText(suspect);
+            }
+            finally {
+                c.close();
+            }
         }
     }
 
@@ -184,11 +265,41 @@ public class CrimeFragment extends Fragment {
             mTimeButton.setText(DateFormat.format("hh:mm a", mCrime.getDate()));
     }
 
+    private String getCrimeReport(){
+        String solved = null;
+        if(mCrime.isSolved())
+            solved = getString(R.string.crime_report_solved);
+        else
+            solved = getString(R.string.crime_report_unsolved);
+
+        String dateFormat = "EEE, MM dd";
+        String dateString = DateFormat.format(dateFormat, mCrime.getDate()).toString();
+
+        String suspect = mCrime.getSuspect();
+        if(suspect == null){
+            suspect = getString(R.string.crime_report_no_suspect);
+        }
+        else{
+            suspect = getString(R.string.crime_report_suspect, mCrime.getSuspect());
+        }
+
+        String report = getString(R.string.crime_report, mCrime.getTitle(), dateString, solved, suspect);
+        return report;
+    }
+
     public static UUID getChangedCrimeForIntent(Intent data){
         Object obj = data.getSerializableExtra(EXTRA_CRIME_CHANGE);
         if(obj != null)
             return (UUID) obj;
         return null;
+    }
+
+    @Override
+    public void onPause(){
+        super.onPause();
+
+        CrimeLab.get(getActivity())
+                .updateCrime(mCrime);
     }
 }
 

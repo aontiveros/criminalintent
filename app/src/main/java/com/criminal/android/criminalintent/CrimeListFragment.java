@@ -1,6 +1,5 @@
 package com.criminal.android.criminalintent;
 
-import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
@@ -15,9 +14,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.CheckBox;
 import android.widget.TextView;
-import android.widget.Toast;
-
-import org.w3c.dom.Text;
 
 import java.util.List;
 import java.util.UUID;
@@ -100,6 +96,7 @@ public class CrimeListFragment extends Fragment{
             mCrimeRecyclerView.setAdapter(mCrimeAdapter);
         }
         else{
+            mCrimeAdapter.setCrimes(crimes);
             mCrimeAdapter.notifyDataSetChanged();
         }
 
@@ -254,6 +251,10 @@ public class CrimeListFragment extends Fragment{
         public void onBindViewHolder(CrimeHolder holder, int position){
             Crime crime = mCrimes.get(position);
             holder.bindCrime(crime);
+        }
+
+        public void setCrimes(List<Crime> crimeList){
+            mCrimes = crimeList;
         }
     }
 }
