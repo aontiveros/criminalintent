@@ -4,11 +4,13 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.os.Environment;
 
 import com.criminal.android.criminalintent.database.CrimeBaseHelper;
 import com.criminal.android.criminalintent.database.CrimeCursorWrapper;
 import com.criminal.android.criminalintent.database.CrimeDbSchema;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -120,6 +122,16 @@ public class CrimeLab {
                 null, //Having
                 null); //orderBy
         return new CrimeCursorWrapper(cursor);
+    }
+
+    public File getPhotoFile(Crime crime){
+        //get the directory path to the user's photo location
+        File externalFilesDir = mContext.getExternalFilesDir(Environment.DIRECTORY_PICTURES);
+        //if it doesn't exist we can't really do anything.
+        if(externalFilesDir == null){
+            return null;
+        }
+        return new File(externalFilesDir, crime.getPhotoFilename());
     }
 
 }
