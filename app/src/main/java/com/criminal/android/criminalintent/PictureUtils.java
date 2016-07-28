@@ -9,7 +9,6 @@ import android.graphics.Point;
  * Created by aontivero on 7/26/2016.
  */
 public class PictureUtils {
-
     /**
      * Get the bitmap from the respective file based on the activity size.
      * Normally we can't always be sure of the screen real-state available to us, so
@@ -35,7 +34,7 @@ public class PictureUtils {
     public static Bitmap getScaledBitmap(String path, int destWidth, int destHeight){
         //Read the dimiension of file from disk
         BitmapFactory.Options options = new BitmapFactory.Options();
-        //Just decode bounds. Don't load the full image jsut yet
+        //Just decode bounds. Don't load the full image just yet
         options.inJustDecodeBounds = true;
         //get the actual size of the image for now.
         BitmapFactory.decodeFile(path, options);

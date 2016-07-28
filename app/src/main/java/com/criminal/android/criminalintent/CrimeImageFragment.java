@@ -16,7 +16,7 @@ import android.widget.ImageView;
 public class CrimeImageFragment extends DialogFragment{
 
     private static final String EXTRA_IMAGE_PATH = "com.criminal.android.criminalintent.CrimeImageFragment.image";
-
+    private ImageView mImageView;
 
     public static CrimeImageFragment newInstance(String photoPath){
         Bundle bundle = new Bundle();
@@ -50,5 +50,6 @@ public class CrimeImageFragment extends DialogFragment{
                 .setView(v)
                 .create();
     }
+
 
 }

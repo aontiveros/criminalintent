@@ -12,7 +12,7 @@ import android.support.v7.app.AppCompatActivity;
 import java.util.List;
 import java.util.UUID;
 
-public class CrimePagerActivity extends AppCompatActivity {
+public class CrimePagerActivity extends AppCompatActivity implements CrimeFragment.Callbacks {
 
     private static final String EXTA_CRIME = "com.criminal.android.criminalintent.crimepageactivity.crime";
 
@@ -48,6 +48,11 @@ public class CrimePagerActivity extends AppCompatActivity {
                 break;
             }
         }
+    }
+
+    @Override
+    public void onCrimeUpdate(Crime crime){
+        //do nothing
     }
 
     public static Intent newIntent(Context context, UUID id){

@@ -1,8 +1,8 @@
 package com.criminal.android.criminalintent;
 
 import android.os.Bundle;
+import android.support.annotation.LayoutRes;
 import android.support.v4.app.Fragment;
-import android.support.v4.app.FragmentActivity;
 import android.support.v4.app.FragmentManager;
 import android.support.v7.app.AppCompatActivity;
 
@@ -19,7 +19,7 @@ public abstract class SingleFragmentActivity extends AppCompatActivity{
     @Override
     public void onCreate(Bundle savedInstanceBundle){
         super.onCreate(savedInstanceBundle);
-        setContentView(R.layout.activity_fragment);
+        setContentView(getLayoutRes());
 
         FragmentManager fm = getSupportFragmentManager();
         Fragment fragment = fm.findFragmentById(R.id.fragment_container);
@@ -30,5 +30,10 @@ public abstract class SingleFragmentActivity extends AppCompatActivity{
                     .add(R.id.fragment_container, fragment)
                     .commit();
         }
+    }
+
+    @LayoutRes
+    protected int getLayoutRes(){
+        return R.layout.activity_fragment;
     }
 }

@@ -1,5 +1,6 @@
 package com.criminal.android.criminalintent;
 
+import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
@@ -22,16 +23,20 @@ import java.util.UUID;
  * Created by anton on 7/16/2016.
  */
 public class CrimeListFragment extends Fragment{
+    private static final int REQUEST_CRIME = 1;
+    private static final String SAVED_SUBTITLE = "subtitle";    private RecyclerView mCrimeRecyclerView;
 
-    private RecyclerView mCrimeRecyclerView;
     private CrimeAdapter mCrimeAdapter;
     private TextView mNoCrimeTextView;
 
     private boolean mSubtitleVisibility;
 
-    private static final int REQUEST_CRIME = 1;
-    private static final String SAVED_SUBTITLE = "subtitle";
+    //ca;;back interface
+    private Callbacks mCallbacks;
 
+    public interface Callbacks {
+        void onCrimeSelected(Crime crime);
+    }
 
 
     @Override
@@ -79,7 +84,7 @@ public class CrimeListFragment extends Fragment{
     /**
      * Create the adapter, give it the list of crimes, and assign it to the recycle view to work with.
      */
-    private void updateUI(){
+    public void updateUI(){
         CrimeLab crimeLab = CrimeLab.get(getActivity());
         List<Crime> crimes = crimeLab.getCrimes();
 
@@ -131,8 +136,8 @@ public class CrimeListFragment extends Fragment{
             case R.id.menu_item_new_crime:
                 Crime crime = new Crime();
                 CrimeLab.get(getActivity()).addCrime(crime);
-                Intent intent = new CrimePagerActivity().newIntent(getActivity(), crime.getId());
-                startActivity(intent);
+                updateUI();
+                mCallbacks.onCrimeSelected(crime);
                 return true;
             case R.id.menu_item_show_subtitle:
                 mSubtitleVisibility = !mSubtitleVisibility;
@@ -167,6 +172,18 @@ public class CrimeListFragment extends Fragment{
     public void onSaveInstanceState(Bundle bundle){
         super.onSaveInstanceState(bundle);
         bundle.putBoolean(SAVED_SUBTITLE, mSubtitleVisibility);
+    }
+
+    @Override
+    public void onAttach(Activity activity){
+        super.onAttach(activity);
+        mCallbacks = (Callbacks) activity;
+    }
+
+    @Override
+    public void onDetach(){
+        super.onDetach();
+        mCallbacks = null;
     }
 
     /**
@@ -207,7 +224,7 @@ public class CrimeListFragment extends Fragment{
 
         @Override
         public void onClick(View v){
-            startActivityForResult(CrimePagerActivity.newIntent(getActivity(), mCrime.getId()), CrimeListFragment.REQUEST_CRIME);
+            mCallbacks.onCrimeSelected(mCrime);
         }
     }
 
